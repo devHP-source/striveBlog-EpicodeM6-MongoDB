@@ -10,7 +10,7 @@ const Footer = (props) => {
       }}
     >
       <Container>
-        {`${new Date().getFullYear()} - &copy;Strive School | Developed for homework projects.`} 
+        {`${new Date().getFullYear()} - &copy; Strive School | Developed by devByPau`} 
       </Container>
     </footer>
   )

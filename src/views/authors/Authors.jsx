@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react"
-import { Alert, Card, Col, Container, Image, Row, Spinner } from "react-bootstrap"
+import { Alert, Card, Col, Container, Image, Row, Spinner} from "react-bootstrap"
 import "./styles.css"
 
 const API_URL = "http://localhost:9099"
@@ -16,7 +16,8 @@ const Authors = () => {
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`)
         }
-        setAuthors(await response.json())
+        const result = await response.json()
+        setAuthors(result.data) // la lista è dentro "data" (risposta paginata)
       } catch (error) {
         console.error(error)
         setHasError(true)

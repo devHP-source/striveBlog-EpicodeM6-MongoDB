@@ -3,6 +3,7 @@ const express = require('express')
 const cors = require('cors')
 const mongoose = require('mongoose')
 const authorsRouter = require('./routes/authors')
+const blogPostsRouter = require('./routes/blogPosts')
 
 const PORT = process.env.PORT || 9099
 
@@ -19,6 +20,7 @@ server.get('/', (request, response) => {
 })
 
 server.use('/authors', authorsRouter)
+server.use('/blogPosts', blogPostsRouter)
 
 
 server.use((error, request, response, next) => {
