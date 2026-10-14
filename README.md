@@ -60,8 +60,8 @@ Quick check: `GET {{baseUrl}}/` should return `{ "message": "Welcome to Epi-Stri
 | GET | `{{baseUrl}}/authors/:id` | One author |
 | GET | `{{baseUrl}}/authors/:id/blogPosts` | All the posts of one author |
 | POST | `{{baseUrl}}/authors` | Create an author |
-| PUT | `{{baseUrl}}/authors/:id` | Update an author |
-| DELETE | `{{baseUrl}}/authors/:id` | Delete an author |
+| PUT | `{{baseUrl}}/authors/:id` | Update an author (a new email is also updated in their posts) |
+| DELETE | `{{baseUrl}}/authors/:id` | Delete an author and all their posts |
 
 Example body for `POST /authors`:
 ```json
@@ -80,7 +80,7 @@ Example body for `POST /authors`:
 |---|---|---|
 | GET | `{{baseUrl}}/blogPosts?page=1&perPage=10&title=react` | List of posts (paginated, newest first, optional search by title) |
 | GET | `{{baseUrl}}/blogPosts/:id` | One post |
-| POST | `{{baseUrl}}/blogPosts` | Create a post |
+| POST | `{{baseUrl}}/blogPosts` | Create a post (the author email must belong to an existing author) |
 | PUT | `{{baseUrl}}/blogPosts/:id` | Update a post |
 | DELETE | `{{baseUrl}}/blogPosts/:id` | Delete a post |
 
@@ -100,6 +100,7 @@ Example body for `POST /blogPosts`:
 
 - Create an author first. Then use the `_id` from the response in the `/:id` routes.
 - The `author` field of a post is the author's **email**, which is how `GET /authors/:id/blogPosts` finds the posts.
+- `perPage` goes from 1 to 100 (default 10).
 - `PUT` accepts only the fields you want to change.
 - Response codes:
 
@@ -107,6 +108,10 @@ Example body for `POST /blogPosts`:
 |---|---|
 | 200 | OK |
 | 201 | Created |
-| 400 | Missing required field or invalid ID |
+| 400 | Missing required field, invalid ID or no author with that email |
 | 404 | Not found |
 | 409 | Email already in use |
+
+## MongoDB Compass queries (W2D1)
+
+The queries and the number of results are in [queries/W2D1.md](queries/W2D1.md).

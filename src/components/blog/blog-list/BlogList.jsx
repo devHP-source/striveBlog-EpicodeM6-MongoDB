@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react"
 import { Alert, Button, Col, Form, Row, Spinner } from "react-bootstrap"
 import BlogItem from "../blog-item/BlogItem"
+import { API_URL } from "../../../config"
 
-const API_URL = "http://localhost:9099"
 const PER_PAGE = 6
 
 const BlogList = (props) => {
@@ -15,6 +15,7 @@ const BlogList = (props) => {
   const [hasError, setHasError] = useState(false)
 
   useEffect(() => {
+    let ignore = false // diventa true se page o title cambiano prima che arrivi la risposta
     const loadPosts = async () => {
       setIsLoading(true)
       setHasError(false)
@@ -26,16 +27,21 @@ const BlogList = (props) => {
           throw new Error(`Request failed with status ${response.status}`)
         }
         const result = await response.json()
-        setPosts(result.data)
-        setTotalPages(result.totalPages)
+        if (!ignore) { // una risposta vecchia non sovrascrive quella nuova
+          setPosts(result.data)
+          setTotalPages(result.totalPages)
+        }
       } catch (error) {
         console.error(error)
-        setHasError(true)
+        if (!ignore) setHasError(true)
       } finally {
-        setIsLoading(false)
+        if (!ignore) setIsLoading(false)
       }
     }
     loadPosts()
+    return () => {
+      ignore = true
+    }
   }, [page, title])
 
   const handleSearch = (event) => {

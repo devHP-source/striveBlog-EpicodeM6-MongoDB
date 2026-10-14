@@ -5,8 +5,7 @@ import { Editor } from 'react-draft-wysiwyg'
 import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css'
 import "./styles.css"
 import draftToHtml from "draftjs-to-html"
-
-const API_URL = "http://localhost:9099"
+import { API_URL } from "../../config"
 
 const initialForm = {
   title: "",
@@ -19,7 +18,7 @@ const initialForm = {
 const NewBlogPost = props => {
   const [text, setText] = useState("")
   const [formData, setFormData] = useState(initialForm)
-  const [hasError, setHasError] = useState(false)
+  const [errorMessage, setErrorMessage] = useState("")
   const navigate = useNavigate()
 
   const handleChange = useCallback(value => {
@@ -33,7 +32,7 @@ const NewBlogPost = props => {
 
   const handleSubmit = async event => {
     event.preventDefault()
-    setHasError(false)
+    setErrorMessage("")
     try {
       const response = await fetch(`${API_URL}/blogPosts`, {
         method: "POST",
@@ -48,19 +47,20 @@ const NewBlogPost = props => {
         }),
       })
       if (!response.ok) {
-        throw new Error(`Request failed with status ${response.status}`)
+        const result = await response.json()
+        throw new Error(result.message) // es. "No author with this email"
       }
       navigate("/") // torna alla home, dove si vede il nuovo articolo
     } catch (error) {
       console.error(error)
-      setHasError(true)
+      setErrorMessage(error.message)
     }
   }
 
   return (
     <Container className="new-blog-container">
       <Form className="mt-5" onSubmit={handleSubmit} onReset={() => setFormData(initialForm)}>
-        {hasError && <Alert variant="danger">Impossibile pubblicare l'articolo</Alert>}
+        {errorMessage && <Alert variant="danger">{`Impossibile pubblicare l'articolo: ${errorMessage}`}</Alert>}
         <Form.Group controlId="blog-form" className="mt-3">
           <Form.Label>Titolo</Form.Label>
           <Form.Control

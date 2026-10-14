@@ -1,32 +1,44 @@
 import React, { useEffect, useState } from "react"
-import { Alert, Card, Col, Container, Image, Row, Spinner} from "react-bootstrap"
+import { Alert, Button, Card, Col, Container, Image, Row, Spinner} from "react-bootstrap"
+import { API_URL } from "../../config"
 import "./styles.css"
 
-const API_URL = "http://localhost:9099"
+const PER_PAGE = 12
 
 const Authors = () => {
   const [authors, setAuthors] = useState([])
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [isLoading, setIsLoading] = useState(true)
   const [hasError, setHasError] = useState(false)
 
   useEffect(() => {
+    let ignore = false // diventa true se page cambia prima che arrivi la risposta
     const loadAuthors = async () => {
+      setIsLoading(true)
+      setHasError(false)
       try {
-        const response = await fetch(`${API_URL}/authors`)
+        const response = await fetch(`${API_URL}/authors?page=${page}&perPage=${PER_PAGE}`)
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`)
         }
         const result = await response.json()
-        setAuthors(result.data) // la lista è dentro "data" (risposta paginata)
+        if (!ignore) { // una risposta vecchia non sovrascrive quella nuova
+          setAuthors(result.data) // la lista è dentro "data" (risposta paginata)
+          setTotalPages(result.totalPages)
+        }
       } catch (error) {
         console.error(error)
-        setHasError(true)
+        if (!ignore) setHasError(true)
       } finally {
-        setIsLoading(false)
+        if (!ignore) setIsLoading(false)
       }
     }
     loadAuthors()
-  }, [])
+    return () => {
+      ignore = true
+    }
+  }, [page])
 
   return (
     <Container fluid="sm">
@@ -57,6 +69,26 @@ const Authors = () => {
           </Col>
         ))}
       </Row>
+
+      {totalPages > 1 && (
+        <div className="d-flex justify-content-center align-items-center gap-3 mb-5">
+          <Button
+            variant="outline-dark"
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+          >
+            Previous
+          </Button>
+          <span>{`Page ${page} of ${totalPages}`}</span>
+          <Button
+            variant="outline-dark"
+            disabled={page === totalPages}
+            onClick={() => setPage(page + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      )}
     </Container>
   )
 }
