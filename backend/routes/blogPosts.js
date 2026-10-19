@@ -1,6 +1,8 @@
 const express = require('express')
 const Author = require('../models/Author')
 const BlogPost = require('../models/BlogPost')
+const uploadCloudinary = require('../middlewares/uploadCloudinary')
+const sendEmail = require('../utils/sendEmail')
 
 const router = express.Router()
 
@@ -57,6 +59,11 @@ router.post('/', async (request, response) => { // POST: /blogPosts, crea un nuo
             })
     }
     const blogPost = await BlogPost.create(request.body)
+    await sendEmail( // avvisa l'autore, il campo author è la sua email
+        blogPost.author,
+        "Your post is published",
+        `Your post "${blogPost.title}" has been published on Strive Blog.`
+    )
     response.status(201)
         .send(blogPost)
 })
@@ -74,6 +81,26 @@ router.put('/:id', async (request, response) => { // PUT: /blogPosts/:id, update
     const blogPost = await BlogPost.findByIdAndUpdate(request.params.id, request.body, {
         returnDocument: 'after', // send back the post after the update
         runValidators: true,
+    })
+    if (!blogPost) {
+        return response.status(404)
+            .send({
+                message: "Blog post not found"
+            })
+    }
+    response.status(200)
+        .send(blogPost)
+})
+
+router.patch('/:blogPostId/cover', uploadCloudinary.single('cover'), async (request, response) => { // PATCH: /blogPosts/:blogPostId/cover, carica la cover su Cloudinary
+    if (!request.file) {
+        return response.status(400)
+            .send({
+                message: "No image uploaded, use the field 'cover'"
+            })
+    }
+    const blogPost = await BlogPost.findByIdAndUpdate(request.params.blogPostId, { cover: request.file.path }, { // path è l'URL di Cloudinary
+        returnDocument: 'after',
     })
     if (!blogPost) {
         return response.status(404)

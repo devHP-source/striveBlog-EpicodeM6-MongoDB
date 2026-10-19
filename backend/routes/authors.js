@@ -2,6 +2,8 @@ const express = require('express')
 const mongoose = require('mongoose')
 const Author = require('../models/Author')
 const BlogPost = require('../models/BlogPost')
+const uploadCloudinary = require('../middlewares/uploadCloudinary')
+const sendEmail = require('../utils/sendEmail')
 
 const router = express.Router()
 
@@ -66,6 +68,11 @@ router.get('/:id/blogPosts', async (request, response) => { // GET: /authors/:id
 
 router.post('/', async (request, response) => { // POST: /authors, crea un nuovo autore
     const author = await Author.create(request.body)
+    await sendEmail( // email di benvenuto al nuovo autore
+        author.email,
+        "Welcome to Strive Blog",
+        `Hi ${author.name}, welcome to Strive Blog! You can now publish your posts, by the way, this is a TEST email`
+    )
     response.status(201)
         .send(author)
 })
@@ -84,6 +91,26 @@ router.put('/:id', async (request, response) => { // PUT: /authors/:id, update u
     })
     if (author.email !== oldAuthor.email) { // i post salvano l'email dell'autore, quindi va cambiata anche lì
         await BlogPost.updateMany({ author: oldAuthor.email }, { author: author.email })
+    }
+    response.status(200)
+        .send(author)
+})
+
+router.patch('/:authorId/avatar', uploadCloudinary.single('avatar'), async (request, response) => { // PATCH: /authors/:authorId/avatar, carica l'avatar su Cloudinary
+    if (!request.file) {
+        return response.status(400)
+            .send({
+                message: "No image uploaded, use the field 'avatar'"
+            })
+    }
+    const author = await Author.findByIdAndUpdate(request.params.authorId, { avatar: request.file.path }, { // path è l'URL di Cloudinary
+        returnDocument: 'after',
+    })
+    if (!author) {
+        return response.status(404)
+            .send({
+                message: "Author not found"
+            })
     }
     response.status(200)
         .send(author)

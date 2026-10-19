@@ -26,6 +26,18 @@ The project has two parts:
    MONGODB_URI=mongodb+srv://<username>:<password>@<cluster>.mongodb.net/
    ```
    The database used is `strive-blog`. The port is `9099` by default and can be changed with `PORT`.
+3. Add the Cloudinary keys (Cloudinary dashboard → API Keys) to upload the images:
+   ```
+   CLOUDINARY_CLOUD_NAME=<cloud name>
+   CLOUDINARY_API_KEY=<api key>
+   CLOUDINARY_API_SECRET=<api secret>
+   ```
+4. Optional, for the emails: add the SendGrid key and the sender email. The sender must be verified in SendGrid (Settings → Sender Authentication).
+   ```
+   SENDGRIND_API_KEY=SG.<sendgrid api key>
+   SENDGRID_SENDER=<your verified email>
+   ```
+   Without them the API still works, the email error is only printed in the terminal.
 
 ## Run the app
 
@@ -59,8 +71,9 @@ Quick check: `GET {{baseUrl}}/` should return `{ "message": "Welcome to Epi-Stri
 | GET | `{{baseUrl}}/authors?page=1&perPage=10` | List of authors (paginated, alphabetical) |
 | GET | `{{baseUrl}}/authors/:id` | One author |
 | GET | `{{baseUrl}}/authors/:id/blogPosts` | All the posts of one author |
-| POST | `{{baseUrl}}/authors` | Create an author |
+| POST | `{{baseUrl}}/authors` | Create an author (sends a welcome email) |
 | PUT | `{{baseUrl}}/authors/:id` | Update an author (a new email is also updated in their posts) |
+| PATCH | `{{baseUrl}}/authors/:authorId/avatar` | Upload the avatar to Cloudinary and save its URL |
 | DELETE | `{{baseUrl}}/authors/:id` | Delete an author and all their posts |
 
 Example body for `POST /authors`:
@@ -80,8 +93,9 @@ Example body for `POST /authors`:
 |---|---|---|
 | GET | `{{baseUrl}}/blogPosts?page=1&perPage=10&title=react` | List of posts (paginated, newest first, optional search by title) |
 | GET | `{{baseUrl}}/blogPosts/:id` | One post |
-| POST | `{{baseUrl}}/blogPosts` | Create a post (the author email must belong to an existing author) |
+| POST | `{{baseUrl}}/blogPosts` | Create a post (the author email must belong to an existing author, the author gets an email) |
 | PUT | `{{baseUrl}}/blogPosts/:id` | Update a post |
+| PATCH | `{{baseUrl}}/blogPosts/:blogPostId/cover` | Upload the cover to Cloudinary and save its URL |
 | DELETE | `{{baseUrl}}/blogPosts/:id` | Delete a post |
 
 Example body for `POST /blogPosts`:
@@ -96,6 +110,16 @@ Example body for `POST /blogPosts`:
 }
 ```
 
+### Upload an image
+
+For `PATCH /authors/:authorId/avatar` and `PATCH /blogPosts/:blogPostId/cover`:
+
+1. Open the **Body** tab and choose **Multipart Form**.
+2. Add a field named `avatar` (for authors) or `cover` (for posts) and set its type to **File**.
+3. Select the image and press **Send**.
+
+The image is saved in the `strive-blog` folder on Cloudinary, and the response is the author or post with the new Cloudinary URL.
+
 ### Notes
 
 - Create an author first. Then use the `_id` from the response in the `/:id` routes.
@@ -108,7 +132,7 @@ Example body for `POST /blogPosts`:
 |---|---|
 | 200 | OK |
 | 201 | Created |
-| 400 | Missing required field, invalid ID or no author with that email |
+| 400 | Missing required field, invalid ID, no author with that email or no image uploaded |
 | 404 | Not found |
 | 409 | Email already in use |
 
