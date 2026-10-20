@@ -110,6 +110,26 @@ Example body for `POST /blogPosts`:
 }
 ```
 
+### Comments
+
+The comments are embedded in the post (the `comments` array of each post).
+
+| Method | URL | Description |
+|---|---|---|
+| GET | `{{baseUrl}}/blogPosts/:id/comments` | All the comments of one post |
+| GET | `{{baseUrl}}/blogPosts/:id/comments/:commentId` | One comment of one post |
+| POST | `{{baseUrl}}/blogPosts/:id` | Add a comment to a post |
+| PUT | `{{baseUrl}}/blogPosts/:id/comment/:commentId` | Update a comment |
+| DELETE | `{{baseUrl}}/blogPosts/:id/comment/:commentId` | Delete a comment |
+
+Example body for `POST /blogPosts/:id`:
+```json
+{
+  "text": "Great post!",
+  "author": "Mario"
+}
+```
+
 ### Upload an image
 
 For `PATCH /authors/:authorId/avatar` and `PATCH /blogPosts/:blogPostId/cover`:

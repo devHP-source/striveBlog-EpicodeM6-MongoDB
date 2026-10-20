@@ -124,4 +124,91 @@ router.delete('/:id', async (request, response) => { // DELETE: /blogPosts/:id, 
         .send(blogPost)
 })
 
+router.get('/:id/comments', async (request, response) => { // GET: /blogPosts/:id/comments, tutti i commenti di un post
+    const blogPost = await BlogPost.findById(request.params.id)
+    if (!blogPost) {
+        return response.status(404)
+            .send({
+                message: "Blog post not found"
+            })
+    }
+    response.status(200)
+        .send(blogPost.comments)
+})
+
+router.get('/:id/comments/:commentId', async (request, response) => { // GET: /blogPosts/:id/comments/:commentId, un commento di un post
+    const blogPost = await BlogPost.findById(request.params.id)
+    if (!blogPost) {
+        return response.status(404)
+            .send({
+                message: "Blog post not found"
+            })
+    }
+    const comment = blogPost.comments.id(request.params.commentId) // cerca il commento per _id dentro l'array
+    if (!comment) {
+        return response.status(404)
+            .send({
+                message: "Comment not found"
+            })
+    }
+    response.status(200)
+        .send(comment)
+})
+
+router.post('/:id', async (request, response) => { // POST: /blogPosts/:id, aggiunge un commento al post
+    const blogPost = await BlogPost.findById(request.params.id)
+    if (!blogPost) {
+        return response.status(404)
+            .send({
+                message: "Blog post not found"
+            })
+    }
+    blogPost.comments.push(request.body)
+    await blogPost.save()
+    response.status(201)
+        .send(blogPost.comments[blogPost.comments.length - 1]) // il commento appena aggiunto
+})
+
+router.put('/:id/comment/:commentId', async (request, response) => { // PUT: /blogPosts/:id/comment/:commentId, modifica un commento
+    const blogPost = await BlogPost.findById(request.params.id)
+    if (!blogPost) {
+        return response.status(404)
+            .send({
+                message: "Blog post not found"
+            })
+    }
+    const comment = blogPost.comments.id(request.params.commentId)
+    if (!comment) {
+        return response.status(404)
+            .send({
+                message: "Comment not found"
+            })
+    }
+    comment.set(request.body)
+    await blogPost.save()
+    response.status(200)
+        .send(comment)
+})
+
+router.delete('/:id/comment/:commentId', async (request, response) => { // DELETE: /blogPosts/:id/comment/:commentId, cancella un commento
+    const blogPost = await BlogPost.findById(request.params.id)
+    if (!blogPost) {
+        return response.status(404)
+            .send({
+                message: "Blog post not found"
+            })
+    }
+    const comment = blogPost.comments.id(request.params.commentId)
+    if (!comment) {
+        return response.status(404)
+            .send({
+                message: "Comment not found"
+            })
+    }
+    comment.deleteOne() // lo toglie dall'array
+    await blogPost.save()
+    response.status(200)
+        .send(comment)
+})
+
 module.exports = router
