@@ -34,11 +34,10 @@ const blogPostSchema = new mongoose.Schema({
             required: true
         },
     },
-    author: {
-        type: String,
-        required: true,
-        trim: true,
-        lowercase: true
+    author: { // referencing: salva solo l'_id dell'autore, con populate() arrivano i suoi dati
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Author',
+        required: true
     },
     content: {
         type: String,

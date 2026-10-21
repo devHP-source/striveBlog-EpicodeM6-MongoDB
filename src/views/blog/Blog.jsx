@@ -16,7 +16,9 @@ const Blog = props => {
   useEffect(() => {
     const loadBlog = async () => {
       try {
-        const response = await fetch(`${API_URL}/blogPosts/${id}`)
+        const response = await fetch(`${API_URL}/blogPosts/${id}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }, // il token salvato al login
+        })
         if (response.status === 404 || response.status === 400) { // post inesistente o id non valido
           navigate("/404", { replace: true })
           return
@@ -51,7 +53,7 @@ const Blog = props => {
 
           <div className="blog-details-container">
             <div className="blog-details-author">
-              <BlogAuthor name={blog.author} />
+              <BlogAuthor name={`${blog.author.name} ${blog.author.surname}`} avatar={blog.author.avatar} />
             </div>
             <div className="blog-details-info">
               <div>{new Date(blog.createdAt).toLocaleDateString()}</div>

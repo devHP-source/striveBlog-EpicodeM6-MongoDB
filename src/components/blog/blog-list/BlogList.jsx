@@ -22,6 +22,7 @@ const BlogList = (props) => {
       try {
         const response = await fetch(
           `${API_URL}/blogPosts?page=${page}&perPage=${PER_PAGE}&title=${encodeURIComponent(title)}`,
+          { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }, // il token salvato al login
         )
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`)

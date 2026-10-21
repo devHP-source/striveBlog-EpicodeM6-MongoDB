@@ -2,8 +2,10 @@ require('dotenv/config')
 const express = require('express')
 const cors = require('cors')
 const mongoose = require('mongoose')
+const authRouter = require('./routes/auth')
 const authorsRouter = require('./routes/authors')
 const blogPostsRouter = require('./routes/blogPosts')
+const verifyToken = require('./middlewares/verifyToken')
 
 const PORT = process.env.PORT || 9099
 
@@ -12,15 +14,16 @@ const server = express()
 server.use(cors())
 server.use(express.json())
 
-server.get('/', (request, response) => {
+server.get('/', verifyToken, (request, response) => {
     response.status(200)
         .send({
             message: "Welcome to Epi-StriveBlog"
         })
 })
 
-server.use('/authors', authorsRouter)
-server.use('/blogPosts', blogPostsRouter)
+server.use('/', authRouter) // POST /login e GET /me
+server.use('/authors', authorsRouter) // il token è controllato dentro il router, POST /authors (registrazione) è libero
+server.use('/blogPosts', verifyToken, blogPostsRouter) // tutte le route dei post richiedono il token
 
 
 server.use((error, request, response, next) => {
@@ -29,6 +32,12 @@ server.use((error, request, response, next) => {
         .send({ 
             message: error.message
         })
+    }
+    if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') { // errori di jwt.verify
+        return response.status(401)
+            .send({
+                message: "Invalid or expired token, please login again"
+            })
     }
     if (error.code === 11000) {
         return response.status(409)

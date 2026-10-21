@@ -38,6 +38,11 @@ The project has two parts:
    SENDGRID_SENDER=<your verified email>
    ```
    Without them the API still works, the email error is only printed in the terminal.
+5. Add a secret to sign the login tokens (any long random string):
+   ```
+   JWT_SECRET=<a long random string>
+   ```
+   You can generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 
 ## Run the app
 
@@ -53,6 +58,8 @@ npm start
 ```
 The frontend opens at `http://localhost:3000`.
 
+Without a token every page redirects to the login. Create an account on `/register`, then log in on `/login`: the token is saved in `localStorage` and you are sent to the homepage. **Esci** (logout) in the navbar removes the token.
+
 ## Test the API with Bruno
 
 Bruno must call the **backend** (`http://localhost:9099`), not the frontend on port 3000.
@@ -62,7 +69,34 @@ Bruno must call the **backend** (`http://localhost:9099`), not the frontend on p
 3. Create a request, choose the method, write the URL and press **Send** (Ctrl+Enter).
 4. For `POST` and `PUT` open the **Body** tab and choose **JSON**.
 
-Quick check: `GET {{baseUrl}}/` should return `{ "message": "Welcome to Epi-StriveBlog" }`.
+Quick check (with the token, see below): `GET {{baseUrl}}/` should return `{ "message": "Welcome to Epi-StriveBlog" }`.
+
+### Authentication
+
+All the routes need a token, except `POST /login` and `POST /authors` (the registration).
+
+| Method | URL | Description |
+|---|---|---|
+| POST | `{{baseUrl}}/login` | Returns the access token (valid for 1 day) |
+| GET | `{{baseUrl}}/me` | The user of the token |
+
+Example body for `POST /login`:
+```json
+{
+  "email": "mario@example.com",
+  "password": "secret123"
+}
+```
+
+Response: `{ "accessToken": "eyJhbGciOi..." }`
+
+To send the token with every request:
+
+1. Add the variable `token` to the environment and paste the `accessToken` as its value.
+2. Open the collection settings → **Auth**, choose **Bearer Token** and write `{{token}}`.
+3. In each request the **Auth** tab must be **inherit** (it sends the header `Authorization: Bearer <token>`).
+
+Everyone can read, but you can change only your own data: `PUT`, `PATCH` and `DELETE` work only on your own profile and on your own posts (otherwise `403`).
 
 ### Authors
 
@@ -71,10 +105,10 @@ Quick check: `GET {{baseUrl}}/` should return `{ "message": "Welcome to Epi-Stri
 | GET | `{{baseUrl}}/authors?page=1&perPage=10` | List of authors (paginated, alphabetical) |
 | GET | `{{baseUrl}}/authors/:id` | One author |
 | GET | `{{baseUrl}}/authors/:id/blogPosts` | All the posts of one author |
-| POST | `{{baseUrl}}/authors` | Create an author (sends a welcome email) |
-| PUT | `{{baseUrl}}/authors/:id` | Update an author (a new email is also updated in their posts) |
-| PATCH | `{{baseUrl}}/authors/:authorId/avatar` | Upload the avatar to Cloudinary and save its URL |
-| DELETE | `{{baseUrl}}/authors/:id` | Delete an author and all their posts |
+| POST | `{{baseUrl}}/authors` | Create an author with an encrypted password (registration, no token needed, sends a welcome email) |
+| PUT | `{{baseUrl}}/authors/:id` | Update your profile |
+| PATCH | `{{baseUrl}}/authors/:authorId/avatar` | Upload your avatar to Cloudinary and save its URL |
+| DELETE | `{{baseUrl}}/authors/:id` | Delete your profile and all your posts |
 
 Example body for `POST /authors`:
 ```json
@@ -83,9 +117,12 @@ Example body for `POST /authors`:
   "surname": "Rossi",
   "email": "mario@example.com",
   "dob": "1990-01-01",
-  "avatar": "https://ui-avatars.com/api/?name=Mario+Rossi"
+  "avatar": "https://ui-avatars.com/api/?name=Mario+Rossi",
+  "password": "secret123"
 }
 ```
+
+The password is saved encrypted with bcrypt and is never sent back in the responses.
 
 ### Blog posts
 
@@ -93,19 +130,18 @@ Example body for `POST /authors`:
 |---|---|---|
 | GET | `{{baseUrl}}/blogPosts?page=1&perPage=10&title=react` | List of posts (paginated, newest first, optional search by title) |
 | GET | `{{baseUrl}}/blogPosts/:id` | One post |
-| POST | `{{baseUrl}}/blogPosts` | Create a post (the author email must belong to an existing author, the author gets an email) |
-| PUT | `{{baseUrl}}/blogPosts/:id` | Update a post |
-| PATCH | `{{baseUrl}}/blogPosts/:blogPostId/cover` | Upload the cover to Cloudinary and save its URL |
-| DELETE | `{{baseUrl}}/blogPosts/:id` | Delete a post |
+| POST | `{{baseUrl}}/blogPosts` | Create a post (the author is the logged-in user, who gets an email) |
+| PUT | `{{baseUrl}}/blogPosts/:id` | Update your post (the author can't be changed) |
+| PATCH | `{{baseUrl}}/blogPosts/:blogPostId/cover` | Upload the cover of your post to Cloudinary and save its URL |
+| DELETE | `{{baseUrl}}/blogPosts/:id` | Delete your post |
 
-Example body for `POST /blogPosts`:
+Example body for `POST /blogPosts` (no `author`, it comes from the token):
 ```json
 {
   "category": "Tech",
   "title": "My first post",
   "cover": "https://picsum.photos/600/300",
   "readTime": { "value": 5, "unit": "minute" },
-  "author": "mario@example.com",
   "content": "<p>Hello world</p>"
 }
 ```
@@ -142,8 +178,8 @@ The image is saved in the `strive-blog` folder on Cloudinary, and the response i
 
 ### Notes
 
-- Create an author first. Then use the `_id` from the response in the `/:id` routes.
-- The `author` field of a post is the author's **email**, which is how `GET /authors/:id/blogPosts` finds the posts.
+- Create an author first, then log in. Use the `_id` from the response in the `/:id` routes.
+- The `author` field of a post saves the author's **`_id`** (taken from the token) as a reference to the `Author` model. The routes use `populate()`, so in the responses `author` is an object with `name`, `surname`, `email` and `avatar`.
 - `perPage` goes from 1 to 100 (default 10).
 - `PUT` accepts only the fields you want to change.
 - Response codes:
@@ -152,7 +188,9 @@ The image is saved in the `strive-blog` folder on Cloudinary, and the response i
 |---|---|
 | 200 | OK |
 | 201 | Created |
-| 400 | Missing required field, invalid ID, no author with that email or no image uploaded |
+| 400 | Missing required field (also email or password at login), invalid ID or no image uploaded |
+| 401 | Missing, invalid or expired token, or wrong email or password |
+| 403 | Not your profile or not your post |
 | 404 | Not found |
 | 409 | Email already in use |
 

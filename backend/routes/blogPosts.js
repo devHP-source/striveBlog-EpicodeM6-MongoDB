@@ -1,12 +1,30 @@
 const express = require('express')
-const Author = require('../models/Author')
 const BlogPost = require('../models/BlogPost')
 const uploadCloudinary = require('../middlewares/uploadCloudinary')
 const sendEmail = require('../utils/sendEmail')
 
 const router = express.Router()
 
+const AUTHOR_FIELDS = 'name surname email avatar' // i campi dell'autore che populate() mette nel post
+
 // Express sends errors from async routes to the error handler in server.js
+
+const isPostAuthor = async (request, response, next) => { // solo l'autore del post può modificarlo o cancellarlo
+    const blogPost = await BlogPost.findById(request.params.id ?? request.params.blogPostId) // la route della cover usa :blogPostId
+    if (!blogPost) {
+        return response.status(404)
+            .send({
+                message: "Blog post not found"
+            })
+    }
+    if (!blogPost.author.equals(request.author._id)) { // il post salva l'_id dell'autore, request.author arriva da verifyToken
+        return response.status(403)
+            .send({
+                message: "You can only change your own posts"
+            })
+    }
+    next()
+}
 
 router.get('/', async (request, response) => { // GET: /blogPosts?page=1&perPage=10&title=boh, lista dei post
     const page = Math.max(parseInt(request.query.page) || 1, 1) // almeno 1, con un numero negativo skip() va in errore
@@ -24,7 +42,8 @@ router.get('/', async (request, response) => { // GET: /blogPosts?page=1&perPage
         BlogPost.find(filter)
             .sort({ createdAt: -1 }) // i più recenti per primi
             .skip((page - 1) * perPage)
-            .limit(perPage),
+            .limit(perPage)
+            .populate('author', AUTHOR_FIELDS), // sostituisce l'_id dell'autore con i suoi dati
         BlogPost.countDocuments(filter),
     ])
 
@@ -40,6 +59,7 @@ router.get('/', async (request, response) => { // GET: /blogPosts?page=1&perPage
 
 router.get('/:id', async (request, response) => { // GET: /blogPosts/:id, return uno specifico post
     const blogPost = await BlogPost.findById(request.params.id)
+        .populate('author', AUTHOR_FIELDS)
     if (!blogPost) {
         return response.status(404)
             .send({
@@ -51,37 +71,27 @@ router.get('/:id', async (request, response) => { // GET: /blogPosts/:id, return
 })
 
 router.post('/', async (request, response) => { // POST: /blogPosts, crea un nuovo post
-    const authorExists = await Author.exists({ email: request.body?.author }) // il post deve appartenere a un autore esistente
-    if (!authorExists) {
-        return response.status(400)
-            .send({
-                message: "No author with this email"
-            })
-    }
-    const blogPost = await BlogPost.create(request.body)
-    await sendEmail( // avvisa l'autore, il campo author è la sua email
-        blogPost.author,
+    const blogPost = await BlogPost.create({
+        ...request.body,
+        author: request.author._id, // l'autore è l'utente del token, non si sceglie nel body
+    })
+    await sendEmail( // avvisa l'autore
+        request.author.email,
         "Your post is published",
         `Your post "${blogPost.title}" has been published on Strive Blog.`
     )
+    await blogPost.populate('author', AUTHOR_FIELDS) // sul documento già creato populate() si usa con await
     response.status(201)
         .send(blogPost)
 })
 
-router.put('/:id', async (request, response) => { // PUT: /blogPosts/:id, update uno specifico post
-    if (request.body?.author) { // se si cambia l'autore, deve esistere
-        const authorExists = await Author.exists({ email: request.body.author })
-        if (!authorExists) {
-            return response.status(400)
-                .send({
-                    message: "No author with this email"
-                })
-        }
-    }
+router.put('/:id', isPostAuthor, async (request, response) => { // PUT: /blogPosts/:id, update uno specifico post
+    delete request.body?.author // l'autore del post non si può cambiare
     const blogPost = await BlogPost.findByIdAndUpdate(request.params.id, request.body, {
         returnDocument: 'after', // send back the post after the update
         runValidators: true,
     })
+        .populate('author', AUTHOR_FIELDS)
     if (!blogPost) {
         return response.status(404)
             .send({
@@ -92,7 +102,7 @@ router.put('/:id', async (request, response) => { // PUT: /blogPosts/:id, update
         .send(blogPost)
 })
 
-router.patch('/:blogPostId/cover', uploadCloudinary.single('cover'), async (request, response) => { // PATCH: /blogPosts/:blogPostId/cover, carica la cover su Cloudinary
+router.patch('/:blogPostId/cover', isPostAuthor, uploadCloudinary.single('cover'), async (request, response) => { // PATCH: /blogPosts/:blogPostId/cover, carica la cover su Cloudinary
     if (!request.file) {
         return response.status(400)
             .send({
@@ -102,6 +112,7 @@ router.patch('/:blogPostId/cover', uploadCloudinary.single('cover'), async (requ
     const blogPost = await BlogPost.findByIdAndUpdate(request.params.blogPostId, { cover: request.file.path }, { // path è l'URL di Cloudinary
         returnDocument: 'after',
     })
+        .populate('author', AUTHOR_FIELDS)
     if (!blogPost) {
         return response.status(404)
             .send({
@@ -112,7 +123,7 @@ router.patch('/:blogPostId/cover', uploadCloudinary.single('cover'), async (requ
         .send(blogPost)
 })
 
-router.delete('/:id', async (request, response) => { // DELETE: /blogPosts/:id, cancella uno specifico post
+router.delete('/:id', isPostAuthor, async (request, response) => { // DELETE: /blogPosts/:id, cancella uno specifico post
     const blogPost = await BlogPost.findByIdAndDelete(request.params.id)
     if (!blogPost) {
         return response.status(404)

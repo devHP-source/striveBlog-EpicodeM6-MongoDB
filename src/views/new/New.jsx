@@ -12,7 +12,6 @@ const initialForm = {
   category: "Categoria 1",
   cover: "",
   readTime: 1,
-  author: "",
 }
 
 const NewBlogPost = props => {
@@ -36,19 +35,21 @@ const NewBlogPost = props => {
     try {
       const response = await fetch(`${API_URL}/blogPosts`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`, // il token salvato al login
+        },
         body: JSON.stringify({
           title: formData.title,
           category: formData.category,
           cover: formData.cover,
           readTime: { value: Number(formData.readTime), unit: "minute" },
-          author: formData.author,
-          content: text,
+          content: text, // l'autore lo prende il backend dal token
         }),
       })
       if (!response.ok) {
         const result = await response.json()
-        throw new Error(result.message) // es. "No author with this email"
+        throw new Error(result.message) // es. "Token missing, please login"
       }
       navigate("/") // torna alla home, dove si vede il nuovo articolo
     } catch (error) {
@@ -107,18 +108,6 @@ const NewBlogPost = props => {
             min="1"
             name="readTime"
             value={formData.readTime}
-            onChange={handleInputChange}
-            required
-          />
-        </Form.Group>
-        <Form.Group controlId="blog-author" className="mt-3">
-          <Form.Label>Email autore</Form.Label>
-          <Form.Control
-            size="lg"
-            type="email"
-            placeholder="autore@email.com"
-            name="author"
-            value={formData.author}
             onChange={handleInputChange}
             required
           />

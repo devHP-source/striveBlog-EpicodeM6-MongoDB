@@ -18,7 +18,9 @@ const Authors = () => {
       setIsLoading(true)
       setHasError(false)
       try {
-        const response = await fetch(`${API_URL}/authors?page=${page}&perPage=${PER_PAGE}`)
+        const response = await fetch(`${API_URL}/authors?page=${page}&perPage=${PER_PAGE}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }, // il token salvato al login
+        })
         if (!response.ok) {
           throw new Error(`Request failed with status ${response.status}`)
         }

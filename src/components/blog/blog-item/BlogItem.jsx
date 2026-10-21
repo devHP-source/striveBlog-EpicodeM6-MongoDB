@@ -13,7 +13,7 @@ const BlogItem = (props) => {
           <Card.Title>{title}</Card.Title>
         </Card.Body>
         <Card.Footer>
-          <BlogAuthor name={author} />
+          <BlogAuthor name={`${author.name} ${author.surname}`} avatar={author.avatar} /> {/* author arriva con populate() */}
         </Card.Footer>
       </Card>
     </Link>
