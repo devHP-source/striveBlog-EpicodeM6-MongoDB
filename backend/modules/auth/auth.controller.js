@@ -3,9 +3,12 @@ const passport = require('./google.strategy') // passport con la strategia di Go
 const authService = require('./auth.service')
 const HttpError = require('../../utils/HttpError')
 
+const isOnline = process.env.FRONTEND_URL.startsWith('https://') // online (Render) frontend e backend sono su due siti diversi, in locale entrambi su localhost
+
 const GOOGLE_COOKIE = { // i cookie del login con Google: il JavaScript delle pagine non li legge e il browser li manda solo a /auth/google/...
     httpOnly: true,
-    sameSite: 'lax', // frontend e backend sullo stesso sito (qui entrambi su localhost)
+    sameSite: isOnline ? 'none' : 'lax', // none: il browser li manda anche con le fetch del frontend da un altro sito
+    secure: isOnline, // sameSite 'none' funziona solo su https
     path: '/auth/google',
 }
 

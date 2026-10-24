@@ -12,7 +12,12 @@ const commentsRoutes = require('./modules/comments/comments.routes')
 
 const app = express()
 
-app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true })) // il browser accetta le risposte solo sul frontend (Bruno non usa CORS), credentials: anche con i cookie del login con Google
+const allowedOrigins = process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()) // trim: "a, b" nel .env non deve dare " b"
+
+app.use(cors({ // il browser accetta le risposte solo da questi indirizzi (Bruno non usa CORS), credentials: anche con i cookie del login con Google
+    origin: allowedOrigins,
+    credentials: true
+}))
 app.use(express.json())
 app.use(cookieParser()) // i cookie della richiesta in request.cookies
 app.use(passport.initialize())

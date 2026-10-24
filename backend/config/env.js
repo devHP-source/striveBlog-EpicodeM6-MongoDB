@@ -8,6 +8,7 @@ const REQUIRED_VARIABLES = [ // senza queste il server non parte
     'GOOGLE_CLIENT_SECRET',
     'GOOGLE_CALLBACK_URL',
     'FRONTEND_URL',
+    'ALLOWED_ORIGINS',
 ]
 
 const checkEnv = () => {
