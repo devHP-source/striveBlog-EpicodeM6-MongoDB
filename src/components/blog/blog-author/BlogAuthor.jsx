@@ -1,6 +1,6 @@
 import React from "react"
 import { Col, Image, Row } from "react-bootstrap"
-import "./styles.css"
+import "./css/BlogAuthor.css"
 
 const BlogAuthor = props => {
   const { name, avatar } = props

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react"
 import { Alert, Button, Card, Col, Container, Image, Row, Spinner} from "react-bootstrap"
 import { API_URL } from "../../config"
-import "./styles.css"
+import "./css/Authors.css"
 
 const PER_PAGE = 12
 
@@ -65,7 +65,9 @@ const Authors = () => {
                 />
                 <Card.Title>{`${author.name} ${author.surname}`}</Card.Title>
                 <Card.Text className="mb-1">{author.email}</Card.Text>
-                <Card.Text className="text-muted">{`Born ${author.dob}`}</Card.Text>
+                {author.dob && ( // chi entra con Google non ha la data di nascita
+                  <Card.Text className="text-muted">{`Born ${author.dob}`}</Card.Text>
+                )}
               </Card.Body>
             </Card>
           </Col>

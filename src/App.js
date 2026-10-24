@@ -18,7 +18,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route element={<ProtectedRoute />}> {/* queste pagine si vedono solo dopo il login */}
+        <Route element={<ProtectedRoute />}>
           <Route path="/" element={<Home />} />
           <Route path="/blog/:id" element={<Blog />} />
           <Route path="/new" element={<NewBlogPost />} />

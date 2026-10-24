@@ -1,6 +1,7 @@
 import React, { useState } from "react"
 import { Alert, Button, Container, Form } from "react-bootstrap"
 import { Link, useNavigate } from "react-router-dom"
+import GoogleButton from "../../components/google-button/GoogleButton"
 import { API_URL } from "../../config"
 
 const initialForm = {
@@ -35,7 +36,7 @@ const Register = () => {
       })
       if (!response.ok) {
         const result = await response.json()
-        throw new Error(result.message) // es. "Email already in use"
+        throw new Error(result.message) // es: "Email already in use"
       }
       navigate("/login") // registrato, ora può fare il login
     } catch (error) {
@@ -99,12 +100,16 @@ const Register = () => {
             name="password"
             value={formData.password}
             onChange={handleInputChange}
+            minLength={8}
             required
           />
         </Form.Group>
-        <Button type="submit" size="lg" variant="dark">
-          Registrati
-        </Button>
+        <div className="d-flex gap-2">
+          <Button type="submit" size="lg" variant="dark">
+            Registrati
+          </Button>
+          <GoogleButton />
+        </div>
       </Form>
       <p className="mt-4">
         Hai già un account? <Link to="/login">Accedi</Link>

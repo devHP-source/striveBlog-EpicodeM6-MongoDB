@@ -5,7 +5,7 @@ import BlogAuthor from "../../components/blog/blog-author/BlogAuthor"
 import DOMPurify from "dompurify"
 import BlogLike from "../../components/likes/BlogLike"
 import { API_URL } from "../../config"
-import "./styles.css"
+import "./css/Blog.css"
 
 const Blog = props => {
   const [blog, setBlog] = useState({})
@@ -30,7 +30,7 @@ const Blog = props => {
         setLoading(false)
       } catch (error) {
         console.error(error)
-        setHasError(true) // es. backend spento: non è un 404
+        setHasError(true) // es: backend spento: non è un 404
       }
     }
     loadBlog()

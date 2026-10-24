@@ -2,7 +2,7 @@ import React from "react"
 import { Card } from "react-bootstrap"
 import { Link } from "react-router-dom"
 import BlogAuthor from "../blog-author/BlogAuthor"
-import "./styles.css"
+import "./css/BlogItem.css"
 const BlogItem = (props) => {
   const { title, cover, author, _id } = props
   return (
@@ -13,7 +13,7 @@ const BlogItem = (props) => {
           <Card.Title>{title}</Card.Title>
         </Card.Body>
         <Card.Footer>
-          <BlogAuthor name={`${author.name} ${author.surname}`} avatar={author.avatar} /> {/* author arriva con populate() */}
+          <BlogAuthor name={`${author.name} ${author.surname}`} avatar={author.avatar} />
         </Card.Footer>
       </Card>
     </Link>

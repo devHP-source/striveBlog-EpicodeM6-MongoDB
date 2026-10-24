@@ -3,7 +3,7 @@ import { Alert, Button, Container, Form } from "react-bootstrap"
 import { useNavigate } from "react-router-dom"
 import { Editor } from 'react-draft-wysiwyg'
 import 'react-draft-wysiwyg/dist/react-draft-wysiwyg.css'
-import "./styles.css"
+import "./css/New.css"
 import draftToHtml from "draftjs-to-html"
 import { API_URL } from "../../config"
 
@@ -18,6 +18,7 @@ const NewBlogPost = props => {
   const [text, setText] = useState("")
   const [formData, setFormData] = useState(initialForm)
   const [errorMessage, setErrorMessage] = useState("")
+  const [editorKey, setEditorKey] = useState(0) // cambia ad ogni Reset, vedi handleReset
   const navigate = useNavigate()
 
   const handleChange = useCallback(value => {
@@ -27,6 +28,12 @@ const NewBlogPost = props => {
   const handleInputChange = event => {
     const { name, value } = event.target
     setFormData({ ...formData, [name]: value })
+  }
+
+  const handleReset = () => {
+    setFormData(initialForm)
+    setText("")
+    setEditorKey(editorKey + 1) // il Reset del form non tocca l'editor: con una key nuova React lo ricrea vuoto
   }
 
   const handleSubmit = async event => {
@@ -60,7 +67,7 @@ const NewBlogPost = props => {
 
   return (
     <Container className="new-blog-container">
-      <Form className="mt-5" onSubmit={handleSubmit} onReset={() => setFormData(initialForm)}>
+      <Form className="mt-5" onSubmit={handleSubmit} onReset={handleReset}>
         {errorMessage && <Alert variant="danger">{`Impossibile pubblicare l'articolo: ${errorMessage}`}</Alert>}
         <Form.Group controlId="blog-form" className="mt-3">
           <Form.Label>Titolo</Form.Label>
@@ -115,7 +122,7 @@ const NewBlogPost = props => {
         <Form.Group controlId="blog-content" className="mt-3">
           <Form.Label>Contenuto Blog</Form.Label>
 
-          <Editor value={text} onChange={handleChange} className="new-blog-content" />
+          <Editor key={editorKey} onChange={handleChange} editorClassName="new-blog-content" />
         </Form.Group>
         <Form.Group className="d-flex mt-3 justify-content-end">
           <Button type="reset" size="lg" variant="outline-dark">

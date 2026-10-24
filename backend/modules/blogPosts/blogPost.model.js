@@ -1,15 +1,5 @@
 const mongoose = require('mongoose')
-
-const commentSchema = new mongoose.Schema({ // ogni commento riceve in automatico il suo _id
-    text: {
-        type: String,
-        required: true
-    },
-    author: {
-        type: String,
-        required: true
-    },
-}, { timestamps: true })
+const commentSchema = require('../comments/comment.schema')
 
 const blogPostSchema = new mongoose.Schema({
     category: {
@@ -37,7 +27,8 @@ const blogPostSchema = new mongoose.Schema({
     author: { // referencing: salva solo l'_id dell'autore, con populate() arrivano i suoi dati
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Author',
-        required: true
+        required: true,
+        index: true // i post si cercano spesso per autore (GET /authors/:id/blogPosts, cancellazione dell'autore)
     },
     content: {
         type: String,

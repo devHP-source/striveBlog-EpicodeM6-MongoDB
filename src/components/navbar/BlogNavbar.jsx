@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react"
 import { Button, Container, Image, Navbar } from "react-bootstrap"
 import { Link, useLocation, useNavigate } from "react-router-dom"
+import { FcGoogle } from "react-icons/fc"
 import logo from "../../assets/logo.png"
 import { API_URL } from "../../config"
-import "./styles.css"
+import "./css/BlogNavbar.css"
 const NavBar = (props) => {
   const [user, setUser] = useState(null) // l'utente loggato, preso da GET /me
   const location = useLocation()
@@ -43,6 +44,22 @@ const NavBar = (props) => {
     navigate("/login")
   }
 
+  const handleLinkGoogle = async () => { // "Collega Google": il backend salva chi sei in un cookie, poi si passa da Google
+    try {
+      const response = await fetch(`${API_URL}/auth/google/link`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        credentials: "include", // per ricevere il cookie del collegamento
+      })
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`)
+      }
+      window.location.href = `${API_URL}/auth/google?link=1` // al ritorno da Google l'account Google è collegato a questo autore
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
   return (
     <Navbar expand="lg" className="blog-navbar" fixed="top">
       <Container className="justify-content-between">
@@ -80,6 +97,12 @@ const NavBar = (props) => {
               roundedCircle
             />
             <span className="fw-bold">{user.name}</span>
+            {!user.googleLinked && ( // solo gli account con password: dopo il collegamento "Continua con Google" apre questo account
+              <Button variant="outline-dark" size="lg" onClick={handleLinkGoogle}>
+                <FcGoogle className="me-2" />
+                Collega Google
+              </Button>
+            )}
             <Button variant="outline-danger" size="lg" onClick={handleLogout}>
               Esci
             </Button>
